@@ -19,6 +19,10 @@ any of certificates expire in 30 days.
     heroku addons:add sendgrid:starter
     heroku ps:scale clock=1
 
+You can ensure that it works by looking logs.
+
+    heroku logs
+
 If you want to be reminded earlier, set `THRESHOLD_DAYS`.
 
     # Remind me 60 days before the expiration
