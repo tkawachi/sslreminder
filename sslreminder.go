@@ -37,7 +37,7 @@ type config struct {
 	domains       []string
 	emails        []string
 	thresholdDays int
-	from string
+	from          string
 }
 
 type sendgridConfig struct {
