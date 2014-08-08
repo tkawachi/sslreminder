@@ -6,7 +6,7 @@ It can be configured via environmental variables.
 
 Followings are mandatory.
 
-* DOMAINS for comma separated domains to be checked.
+* HOSTS for comma separated hosts to be checked.
 * EMAILS for comma separated email addresses.
 * SENDGRID_USERNAME for SendGrid user name.
 * SENDGRID_PASSWORD for SendGrid password.
@@ -23,6 +23,7 @@ if any of certificates expire within THRESHOLD_DAYS.
 package main
 
 import (
+	"bytes"
 	"crypto/tls"
 	"fmt"
 	"github.com/sendgrid/sendgrid-go"
@@ -34,7 +35,7 @@ import (
 )
 
 type config struct {
-	domains       []string
+	hosts         []string
 	emails        []string
 	thresholdDays int
 	from          string
@@ -45,10 +46,10 @@ type sendgridConfig struct {
 	password string
 }
 
-func GetExpiration(domain string) (expiration time.Time, err error) {
-	conn, err := tls.Dial("tcp", domain+":443", &tls.Config{})
+func GetExpiration(host string) (expiration time.Time, err error) {
+	conn, err := tls.Dial("tcp", host+":443", &tls.Config{})
 	if err != nil {
-		log.Printf("ERROR dialing %v", domain)
+		log.Printf("ERROR dialing %v", host)
 		return
 	}
 	defer conn.Close()
@@ -56,12 +57,12 @@ func GetExpiration(domain string) (expiration time.Time, err error) {
 	certs := state.PeerCertificates
 
 	if len(certs) == 0 {
-		err = fmt.Errorf("No PeerCertificates found for %v", domain)
+		err = fmt.Errorf("No PeerCertificates found for %v", host)
 		return
 	}
 
 	if certs[0] == nil {
-		err = fmt.Errorf("First PeerCertificates is nil for %v", domain)
+		err = fmt.Errorf("First PeerCertificates is nil for %v", host)
 		return
 	}
 
@@ -104,7 +105,7 @@ func readConfig() *config {
 	emails := strings.Split(envMandatory("EMAILS"), ",")
 
 	return &config{
-		strings.Split(envMandatory("DOMAINS"), ","),
+		strings.Split(envMandatory("HOSTS"), ","),
 		emails,
 		int(threshold),
 		envOptional("FROM", emails[0]),
@@ -112,18 +113,18 @@ func readConfig() *config {
 }
 
 func GetExpirationMap(config *config) map[string]time.Time {
-	expirationMap := make(map[string]time.Time, len(config.domains))
+	expirationMap := make(map[string]time.Time, len(config.hosts))
 
-	for _, domain := range config.domains {
-		exp, err := GetExpiration(domain)
+	for _, host := range config.hosts {
+		exp, err := GetExpiration(host)
 		if err != nil {
 			log.Printf(
 				"ERROR getting expiration time of %v: %v",
-				domain, err)
+				host, err)
 			continue
 		}
-		log.Printf("Expiration of %v is %v", domain, exp)
-		expirationMap[domain] = exp
+		log.Printf("Expiration of %v is %v", host, exp)
+		expirationMap[host] = exp
 	}
 
 	return expirationMap
@@ -136,7 +137,7 @@ func check(config *config, sgConfig *sendgridConfig, now time.Time) {
 
 	shouldRemind := false
 	for _, ex := range exMap {
-		if ex.After(threshold) {
+		if ex.Before(threshold) {
 			shouldRemind = true
 		}
 	}
@@ -147,14 +148,42 @@ func check(config *config, sgConfig *sendgridConfig, now time.Time) {
 	log.Println("Check finished")
 }
 
+func mailBody(config *config, now time.Time, exMap map[string]time.Time) string {
+	threshold := now.AddDate(0, 0, config.thresholdDays)
+	soon := make(map[string]time.Time)
+	others := make(map[string]time.Time)
+	for host, ex := range exMap {
+		if ex.Before(threshold) {
+			soon[host] = ex
+			log.Printf("%v will be expired soon.", host)
+		} else {
+			others[host] = ex
+		}
+	}
+
+	var buf bytes.Buffer
+	buf.WriteString("Certificates of following hosts expires soon:\n")
+
+	for host, ex := range soon {
+		buf.WriteString(fmt.Sprintf("%v: %v\n", host, ex))
+	}
+
+	if len(others) > 0 {
+		buf.WriteString("\nOthers have enough time to be expired:\n")
+		for host, ex := range others {
+			buf.WriteString(fmt.Sprintf("%v: %v\n", host, ex))
+		}
+	}
+	return buf.String()
+}
+
 func remind(config *config, sgConfig *sendgridConfig, now time.Time,
 	exMap map[string]time.Time) {
 	sg := sendgrid.NewSendGridClient(sgConfig.username, sgConfig.password)
 	msg := sendgrid.NewMail()
 	msg.AddTos(config.emails)
-	msg.SetSubject("SSL certificate expiration")
-	// TODO generate body
-	msg.SetText("")
+	msg.SetSubject("REMINDER SSL certificate expiration")
+	msg.SetText(mailBody(config, now, exMap))
 	msg.SetFrom(config.from)
 	err := sg.Send(msg)
 	if err != nil {
