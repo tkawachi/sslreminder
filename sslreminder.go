@@ -130,7 +130,7 @@ func GetExpirationMap(config *config) map[string]time.Time {
 }
 
 func check(config *config, sgConfig *sendgridConfig, now time.Time) {
-	log.Println("Start checking")
+	log.Println("Check started")
 	exMap := GetExpirationMap(config)
 	threshold := now.AddDate(0, 0, config.thresholdDays)
 
@@ -144,6 +144,7 @@ func check(config *config, sgConfig *sendgridConfig, now time.Time) {
 	if shouldRemind {
 		remind(config, sgConfig, now, exMap)
 	}
+	log.Println("Check finished")
 }
 
 func remind(config *config, sgConfig *sendgridConfig, now time.Time,
@@ -167,4 +168,8 @@ func main() {
 	config := readConfig()
 	sgConfig := readSendgridConfig()
 	check(config, sgConfig, time.Now())
+	for {
+		time.Sleep(24 * time.Hour)
+		check(config, sgConfig, time.Now())
+	}
 }
