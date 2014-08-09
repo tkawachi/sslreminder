@@ -13,6 +13,7 @@ It sends reminder to `alice@example.com` and `bob@example.com` if
 any of certificates expire in 30 days.
 
     git clone git@github.com:tkawachi/sslreminder.git
+    cd sslreminder
     heroku create -b https://github.com/kr/heroku-buildpack-go.git
     heroku config:set HOSTS=1.example.com,2.example.com,3.example.com \
       EMAILS=alice@example.com,bob@example.com
