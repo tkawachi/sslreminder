@@ -1,0 +1,27 @@
+{
+  "name": "sslreminder",
+  "description": "Check expiration date of SSL certificates periodically, then remind you via email.",
+  "repository": "https://github.com/tkawachi/sslreminder",
+  "keywords": ["SSL", "certificate"],
+  "env": {
+    "BUILDPACK_URL": "https://github.com/kr/heroku-buildpack-go.git",
+    "HOSTS": {
+      "description": "Comma separated hosts to be checked. Example: 1.example.com,2.example.com",
+      "required": true
+    },
+    "EMAILS": {
+      "description": "Comma separated email addresses. Example: alice@example.com,bob@example.com",
+      "required": true
+    },
+    "THRESHOLD_DAYS": {
+      "description": "Threshold remaining days to remind.",
+      "value": "30"
+    },
+    "FROM": {
+      "description": "From address. (default the first address in EMAILS)"
+    }
+  },
+  "addons": [
+    "sendgrid:starter"
+  ]
+}
