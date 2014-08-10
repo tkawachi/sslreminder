@@ -196,9 +196,9 @@ func remind(config *config, sgConfig *sendgridConfig, now time.Time,
 func main() {
 	config := readConfig()
 	sgConfig := readSendgridConfig()
-	check(config, sgConfig, time.Now())
+	go check(config, sgConfig, time.Now())
 	for {
 		time.Sleep(24 * time.Hour)
-		check(config, sgConfig, time.Now())
+		go check(config, sgConfig, time.Now())
 	}
 }
