@@ -4,7 +4,10 @@
   "repository": "https://github.com/tkawachi/sslreminder",
   "keywords": ["SSL", "certificate"],
   "env": {
-    "BUILDPACK_URL": "https://github.com/kr/heroku-buildpack-go.git",
+    "BUILDPACK_URL": {
+      "description": "Ensure we use an updated go buildpack",
+      "value": "https://github.com/kr/heroku-buildpack-go.git"
+    }
     "HOSTS": {
       "description": "Comma separated hosts to be checked. Example: 1.example.com,2.example.com",
       "required": true
