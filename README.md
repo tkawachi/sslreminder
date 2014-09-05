@@ -7,6 +7,8 @@ Check expiration date of SSL certificates periodically, then remind you via emai
 This is primary intended to work on Heroku.
 Thanks to Heroku, sslreminder can work as free of charge.
 
+[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
+
 By following commands, sslreminder checks 3 hosts 
 `1.example.com`, `2.example.com` and `3.example.com` every day.
 It sends reminder to `alice@example.com` and `bob@example.com` if
