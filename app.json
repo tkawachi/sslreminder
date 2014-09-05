@@ -5,7 +5,7 @@
   "keywords": ["SSL", "certificate"],
   "env": {
     "BUILDPACK_URL": {
-      "description": "Ensure we use an updated go buildpack",
+      "description": "Ensure we use an updated go buildpack. Usually you don't need to modify this url.",
       "value": "https://github.com/kr/heroku-buildpack-go.git"
     },
     "HOSTS": {
@@ -21,7 +21,8 @@
       "value": "30"
     },
     "FROM": {
-      "description": "From address. (default the first address in EMAILS)"
+      "description": "From address. (default the first address in EMAILS)",
+      "required": false
     }
   },
   "addons": [
